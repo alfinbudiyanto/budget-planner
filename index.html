@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="id">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Budget Planner</title>
+		<link rel="stylesheet" href="styles.css" />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap"
+			rel="stylesheet"
+		/>
+		<style>
+			body {
+				font-family: "Poppins", sans-serif;
+				background-color: #f8f1e4;
+				color: #333;
+				margin: 0;
+				padding: 0;
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+			}
+			header {
+				background-color: #c2a477;
+				color: white;
+				padding: 20px;
+				text-align: center;
+				width: 100%;
+			}
+			main {
+				width: 90%;
+				max-width: 600px;
+				background: white;
+				padding: 20px;
+				margin: 20px auto;
+				border-radius: 10px;
+				box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+			}
+			section {
+				margin-bottom: 20px;
+			}
+			h2 {
+				color: #8d6b4d;
+			}
+			form {
+				display: flex;
+				flex-direction: column;
+				gap: 10px;
+			}
+			input,
+			select,
+			button {
+				padding: 10px;
+				border: 1px solid #ccc;
+				border-radius: 5px;
+				font-size: 16px;
+			}
+			button {
+				background-color: #8d6b4d;
+				color: white;
+				border: none;
+				cursor: pointer;
+			}
+			button:hover {
+				background-color: #72553a;
+			}
+			ul {
+				list-style: none;
+				padding: 0;
+			}
+			li {
+				background: #f3e5d0;
+				padding: 10px;
+				margin: 5px 0;
+				border-radius: 5px;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+			}
+			.delete-btn {
+				background: red;
+				color: white;
+				border: none;
+				padding: 5px 10px;
+				border-radius: 5px;
+				cursor: pointer;
+			}
+			.delete-btn:hover {
+				background: darkred;
+			}
+			.budget-summary {
+				text-align: center;
+				font-size: 20px;
+				font-weight: bold;
+			}
+			.empty-message {
+				text-align: center;
+				color: #888;
+				font-style: italic;
+			}
+		</style>
+	</head>
+	<body>
+		<header>
+			<h1>Budget Planner</h1>
+			<p>Track Your Budget Effectively</p>
+		</header>
+
+		<main>
+			<section class="budget-input">
+				<h2>Tambah Pengeluaran</h2>
+				<form id="budget-form">
+					<label for="category">Kategori:</label>
+					<select id="category">
+						<option value="kopi">Kopi</option>
+						<option value="brunch">Brunch</option>
+						<option value="gym">Gym Membership</option>
+						<option value="thrifting">Thrifting</option>
+						<option value="lainnya">Lainnya</option>
+					</select>
+					<input
+						type="text"
+						id="custom-category"
+						placeholder="Atau masukkan kategori baru"
+					/>
+					<label for="amount">Jumlah (Rp):</label>
+					<input
+						type="number"
+						id="amount"
+						placeholder="Masukkan jumlah"
+						required
+					/>
+					<button type="submit">Tambah</button>
+				</form>
+			</section>
+
+			<section class="budget-list">
+				<h2>Daftar Pengeluaran</h2>
+				<p id="empty-message" class="empty-message">
+					Belum ada pengeluaran
+				</p>
+				<ul id="expense-list"></ul>
+			</section>
+
+			<section class="budget-summary">
+				<h2>Total Pengeluaran</h2>
+				<p id="total-budget">Rp 0</p>
+			</section>
+		</main>
+
+		<script>
+			document.addEventListener("DOMContentLoaded", function () {
+				const budgetForm = document.getElementById("budget-form");
+				const categoryInput = document.getElementById("category");
+				const customCategoryInput =
+					document.getElementById("custom-category");
+				const amountInput = document.getElementById("amount");
+				const expenseList = document.getElementById("expense-list");
+				const totalBudget = document.getElementById("total-budget");
+				const emptyMessage = document.getElementById("empty-message");
+				let total = 0;
+
+				function checkEmptyMessage() {
+					emptyMessage.style.display =
+						expenseList.children.length === 0 ? "block" : "none";
+				}
+
+				function saveToLocalStorage() {
+					localStorage.setItem(
+						"budgetData",
+						JSON.stringify({
+							total,
+							expenses: expenseList.innerHTML,
+						})
+					);
+				}
+
+				function loadFromLocalStorage() {
+					const data = JSON.parse(localStorage.getItem("budgetData"));
+					if (data) {
+						total = data.total;
+						totalBudget.textContent = `Rp ${total.toLocaleString(
+							"id-ID"
+						)}`;
+						expenseList.innerHTML = data.expenses;
+						checkEmptyMessage();
+					}
+				}
+
+				budgetForm.addEventListener("submit", function (event) {
+					event.preventDefault();
+					let category =
+						customCategoryInput.value.trim() ||
+						categoryInput.value.trim();
+					const amount = parseFloat(amountInput.value);
+
+					if (/^\d/.test(category)) {
+						alert("Kategori tidak boleh diawali dengan angka!");
+						return;
+					}
+
+					if (!isNaN(amount) && amount > 0 && category !== "") {
+						const listItem = document.createElement("li");
+						listItem.innerHTML = `${category}: Rp ${amount.toLocaleString(
+							"id-ID"
+						)} <button class="delete-btn">Hapus</button>`;
+						expenseList.appendChild(listItem);
+
+						total += amount;
+						totalBudget.textContent = `Rp ${total.toLocaleString(
+							"id-ID"
+						)}`;
+
+						amountInput.value = "";
+						customCategoryInput.value = "";
+						categoryInput.disabled = false;
+
+						checkEmptyMessage();
+						saveToLocalStorage();
+					}
+				});
+
+				expenseList.addEventListener("click", function (event) {
+					if (event.target.classList.contains("delete-btn")) {
+						const item = event.target.parentElement;
+						const amount = parseFloat(
+							item.textContent.match(/\d+/g).join("")
+						);
+						total -= amount;
+						totalBudget.textContent = `Rp ${total.toLocaleString(
+							"id-ID"
+						)}`;
+						item.remove();
+						checkEmptyMessage();
+						saveToLocalStorage();
+					}
+				});
+
+				loadFromLocalStorage();
+				checkEmptyMessage();
+			});
+		</script>
+	</body>
+</html>
